@@ -3,33 +3,31 @@ package com.ethan.floatingview;
 import android.content.Context;
 import android.content.res.Configuration;
 import android.content.res.Resources;
+import android.graphics.Color;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.MotionEvent;
+import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
 public class FloatingMagnetView extends FrameLayout {
 
-    public static final int MARGIN_EDGE = 13;
+    private final View centerLine = new View(getContext());
+    protected int mScreenWidth;
     private float mOriginalRawX;
     private float mOriginalRawY;
     private float mOriginalX;
     private float mOriginalY;
     private MagnetViewListener mMagnetViewListener;
-    private static final int TOUCH_TIME_THRESHOLD = 150;
     private long mLastTouchDownTime;
     private MoveAnimator mMoveAnimator;
-    protected int mScreenWidth;
-    private int mScreenHeight;
+    private int mScreenHeight; // 整个屏幕高度，包含状态栏
     private int mStatusBarHeight;
     private boolean isNearestLeft = true;
     private float mPortraitY;
-
-    public void setMagnetViewListener(MagnetViewListener magnetViewListener) {
-        this.mMagnetViewListener = magnetViewListener;
-    }
 
     public FloatingMagnetView(Context context) {
         this(context, null);
@@ -44,12 +42,15 @@ public class FloatingMagnetView extends FrameLayout {
         init();
     }
 
+    public void setMagnetViewListener(MagnetViewListener magnetViewListener) {
+        this.mMagnetViewListener = magnetViewListener;
+    }
+
     private void init() {
         mMoveAnimator = new MoveAnimator();
         mStatusBarHeight = getStatusBarHeight();
         setClickable(true);
     }
-
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
@@ -83,7 +84,7 @@ public class FloatingMagnetView extends FrameLayout {
     }
 
     protected boolean isOnClickEvent() {
-        return System.currentTimeMillis() - mLastTouchDownTime < TOUCH_TIME_THRESHOLD;
+        return System.currentTimeMillis() - mLastTouchDownTime < Config.TOUCH_TIME_THRESHOLD;
     }
 
     private void updateViewPosition(MotionEvent event) {
@@ -97,6 +98,22 @@ public class FloatingMagnetView extends FrameLayout {
             desY = mScreenHeight - getHeight();
         }
         setY(desY);
+
+        if (Config.SHOW_CENTER_LINE) {
+            updateCenterLine();
+        }
+    }
+
+    private void updateCenterLine() {
+        if (centerLine.getParent() != null) {
+            ((ViewGroup) centerLine.getParent()).removeView(centerLine);
+        }
+
+        ViewGroup.LayoutParams params = new ViewGroup.LayoutParams(1, ViewGroup.LayoutParams.MATCH_PARENT);
+        centerLine.setX(mScreenWidth / 2.0f);
+        centerLine.setLayoutParams(params);
+        centerLine.setBackgroundColor(Color.BLUE);
+        ((ViewGroup) getParent()).addView(centerLine);
     }
 
     private void changeOriginalTouchParams(MotionEvent event) {
@@ -120,13 +137,14 @@ public class FloatingMagnetView extends FrameLayout {
     }
 
     protected void moveToEdge(boolean isLeft, boolean isLandscape) {
-        float moveDistance = isLeft ? MARGIN_EDGE : mScreenWidth - MARGIN_EDGE;
+        // 距离边缘还有一点空隙
+        float moveDestination = isLeft ? Config.MARGIN_EDGE : mScreenWidth - Config.MARGIN_EDGE;
         float y = getY();
         if (!isLandscape && mPortraitY != 0) {
             y = mPortraitY;
             clearPortraitY();
         }
-        mMoveAnimator.start(moveDistance, Math.min(Math.max(0, y), mScreenHeight - getHeight()));
+        mMoveAnimator.start(moveDestination, Math.min(Math.max(0, y), mScreenHeight - getHeight()));
     }
 
     private void clearPortraitY() {
@@ -142,39 +160,6 @@ public class FloatingMagnetView extends FrameLayout {
     public void onRemove() {
         if (mMagnetViewListener != null) {
             mMagnetViewListener.onRemove(this);
-        }
-    }
-
-    private class MoveAnimator implements Runnable {
-
-        private Handler handler = new Handler(Looper.getMainLooper());
-        private float destinationX;
-        private float destinationY;
-        private long startingTime;
-
-        void start(float x, float y) {
-            this.destinationX = x;
-            this.destinationY = y;
-            startingTime = System.currentTimeMillis();
-            handler.post(this);
-        }
-
-        @Override
-        public void run() {
-            if (getRootView() == null || getRootView().getParent() == null) {
-                return;
-            }
-            float progress = Math.min(1, (System.currentTimeMillis() - startingTime) / 400f);
-            float deltaX = (destinationX - getX()) * progress;
-            float deltaY = (destinationY - getY()) * progress;
-            move(deltaX, deltaY);
-            if (progress < 1) {
-                handler.post(this);
-            }
-        }
-
-        private void stop() {
-            handler.removeCallbacks(this);
         }
     }
 
@@ -205,7 +190,6 @@ public class FloatingMagnetView extends FrameLayout {
         }
     }
 
-
     private int getStatusBarHeight() {
         int result = 0;
         int resourceId = getResources().getIdentifier("status_bar_height", "dimen", "android");
@@ -213,6 +197,39 @@ public class FloatingMagnetView extends FrameLayout {
             result = Resources.getSystem().getDimensionPixelSize(resourceId);
         }
         return result;
+    }
+
+    private class MoveAnimator implements Runnable {
+
+        private Handler handler = new Handler(Looper.getMainLooper());
+        private float destinationX;
+        private float destinationY;
+        private long startingTime;
+
+        void start(float x, float y) {
+            this.destinationX = x;
+            this.destinationY = y;
+            startingTime = System.currentTimeMillis();
+            handler.post(this);
+        }
+
+        @Override
+        public void run() {
+            if (getRootView() == null || getRootView().getParent() == null) {
+                return;
+            }
+            float progress = Math.min(1, (System.currentTimeMillis() - startingTime) / Config.ANIMATION_DURATION);
+            float deltaX = (destinationX - getX()) * progress;
+            float deltaY = (destinationY - getY()) * progress;
+            move(deltaX, deltaY);
+            if (progress < 1) {
+                handler.post(this);
+            }
+        }
+
+        private void stop() {
+            handler.removeCallbacks(this);
+        }
     }
 
 }

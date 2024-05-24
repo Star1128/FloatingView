@@ -73,13 +73,16 @@ public class FloatingViewImpl implements IFloatingView {
 
     @Override
     public FloatingViewImpl attach(ViewGroup container) {
+        // 如果还没 Add，只初始化 Container
         if (container == null || mFloatingMagnetView == null) {
             mContainer = new WeakReference<>(container);
             return this;
         }
+        // 避免重复 Attach
         if (mFloatingMagnetView.getParent() == container) {
             return this;
         }
+        // 更换宿主
         if (mFloatingMagnetView.getParent() != null) {
             ((ViewGroup) mFloatingMagnetView.getParent()).removeView(mFloatingMagnetView);
         }
@@ -149,7 +152,7 @@ public class FloatingViewImpl implements IFloatingView {
         }
         try {
             return (FrameLayout) activity.getWindow().getDecorView();
-        } catch (Exception e) {
+        } catch (Exception ignored) {
         }
         return null;
     }
