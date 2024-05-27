@@ -12,7 +12,9 @@ import androidx.core.view.ViewCompat;
 
 import java.lang.ref.WeakReference;
 
-
+/**
+ * 悬浮窗生命周期控制类，执行添加和移除逻辑
+ */
 public class FloatingViewImpl implements IFloatingView {
 
     private static volatile FloatingViewImpl mInstance;
@@ -96,7 +98,17 @@ public class FloatingViewImpl implements IFloatingView {
         }
         mContainer = new WeakReference<>(container);
         container.addView(mFloatingMagnetView);
+        mFloatingMagnetView.post(
+                this::resetInitEdge
+        );
         return this;
+    }
+
+    public void resetInitEdge() {
+        // 如果没贴边的情况下打开了新页面，需要重新贴一次边
+        mFloatingMagnetView.clearPortraitY();
+        mFloatingMagnetView.updateSize();
+        mFloatingMagnetView.moveToEdge();
     }
 
     @Override

@@ -9,4 +9,6 @@ public interface MagnetViewListener {
     void onDragStart(FloatingMagnetView magnetView);
 
     void onDragEnd(FloatingMagnetView magnetView);
+
+    void onMoveToEdge(FloatingMagnetView magnetView);
 }

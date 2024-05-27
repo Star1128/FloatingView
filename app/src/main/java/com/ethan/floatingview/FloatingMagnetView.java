@@ -13,6 +13,9 @@ import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 
+/**
+ * 悬浮窗视图包装类，充当自定义内容的外壳，包含具体的滑动&吸附逻辑
+ */
 public class FloatingMagnetView extends FrameLayout {
 
     private final View centerLine = new View(getContext());
@@ -28,8 +31,8 @@ public class FloatingMagnetView extends FrameLayout {
     private int mStatusBarHeight;
     private boolean isNearestLeft = true;
     private float mPortraitY;
-    boolean alreadyReportDragStart = false;
-    ImageView contentView;
+    private boolean mIsDragging = false;
+    private ImageView mContentView;
 
     public FloatingMagnetView(Context context) {
         this(context, null);
@@ -47,11 +50,11 @@ public class FloatingMagnetView extends FrameLayout {
     @Override
     public void addView(View child, int width, int height) {
         super.addView(child, width, height);
-        contentView = (ImageView) child;
+        mContentView = (ImageView) child;
     }
 
     public ImageView getContentView() {
-        return contentView;
+        return mContentView;
     }
 
     public void setMagnetViewListener(MagnetViewListener magnetViewListener) {
@@ -74,13 +77,13 @@ public class FloatingMagnetView extends FrameLayout {
                 changeOriginalTouchParams(event);
                 updateSize();
                 mMoveAnimator.stop();
-                alreadyReportDragStart = false;
+                mIsDragging = false;
                 break;
             case MotionEvent.ACTION_MOVE:
                 updateViewPosition(event);
-                if (!alreadyReportDragStart && !isOnClickEvent()) {
+                if (!mIsDragging && !isOnClickEvent()) {
                     mMagnetViewListener.onDragStart(this);
-                    alreadyReportDragStart = true;
+                    mIsDragging = true;
                 }
                 break;
             case MotionEvent.ACTION_UP:
@@ -89,7 +92,8 @@ public class FloatingMagnetView extends FrameLayout {
                 if (isOnClickEvent()) {
                     dealClickEvent();
                 }
-                if (alreadyReportDragStart) {
+                if (mIsDragging) {
+                    // 暂时先不认为拖动状态结束，因为后续还有贴边动画
                     mMagnetViewListener.onDragEnd(this);
                 }
                 break;
@@ -164,10 +168,10 @@ public class FloatingMagnetView extends FrameLayout {
             y = mPortraitY;
             clearPortraitY();
         }
-        mMoveAnimator.start(moveDestination, Math.min(Math.max(0, y), mScreenHeight - getHeight()));
+        mMoveAnimator.start(moveDestination, Math.min(Math.max(getStatusBarHeight(), y), mScreenHeight - getHeight()));
     }
 
-    private void clearPortraitY() {
+    public void clearPortraitY() {
         mPortraitY = 0;
     }
 
@@ -239,11 +243,14 @@ public class FloatingMagnetView extends FrameLayout {
                 return;
             }
             float progress = Math.min(1, (System.currentTimeMillis() - startingTime) / Config.ANIMATION_DURATION);
+            // 计算单次位移量，由于 getX() 和 getY() 每次都在改变，所以并非线性动画
             float deltaX = (destinationX - getX()) * progress;
             float deltaY = (destinationY - getY()) * progress;
             move(deltaX, deltaY);
             if (progress < 1) {
                 handler.post(this);
+            } else if (mIsDragging) {
+                mMagnetViewListener.onMoveToEdge(FloatingMagnetView.this);
             }
         }
 

@@ -7,30 +7,26 @@ import android.os.Bundle
 import android.util.Log
 import android.widget.ImageView
 
-class FloatingManager private constructor() : ActivityLifecycleCallbacks, MagnetViewListener {
+/**
+ * 悬浮窗全局管理类，与 Activity 生命周期绑定
+ */
+object FloatingManager : ActivityLifecycleCallbacks, MagnetViewListener {
 
-    companion object {
-        private const val TAG = "FloatingManager"
+    private const val TAG = "FloatingManager"
 
-        private val instance: FloatingManager by lazy(mode = LazyThreadSafetyMode.SYNCHRONIZED) {
-            FloatingManager()
-        }
+    fun init(application: Application) {
+        application.registerActivityLifecycleCallbacks(this)
+        // 将自定义 ViewGroup 添加进 FloatingView（外壳）中
+        val contentView = buildInitialContent(application)
+        FloatingViewImpl.get().add(contentView)
+        // 监听点击和移除事件
+        FloatingViewImpl.get().listener(this)
+    }
 
-        @JvmStatic
-        fun init(application: Application) {
-            application.registerActivityLifecycleCallbacks(instance)
-            // 将自定义 ViewGroup 添加进 FloatingView（外壳）中
-            val contentView = buildInitialContent(application)
-            FloatingViewImpl.get().add(contentView)
-            // 监听点击和移除事件
-            FloatingViewImpl.get().listener(instance)
-        }
-
-        private fun buildInitialContent(application: Application): ImageView {
-            val view = ImageView(application)
-            view.setImageResource(R.drawable.checkbox_unselect)
-            return view
-        }
+    private fun buildInitialContent(application: Application): ImageView {
+        val view = ImageView(application)
+        view.setImageResource(R.drawable.checkbox_unselect)
+        return view
     }
 
     override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {}
@@ -62,11 +58,12 @@ class FloatingManager private constructor() : ActivityLifecycleCallbacks, Magnet
     }
 
     override fun onDragStart(magnetView: FloatingMagnetView) {
-        FloatingViewImpl.get().contentView?.setImageResource(R.drawable.checkbox_selected)
+        magnetView.contentView?.setImageResource(R.drawable.checkbox_selected)
     }
 
-    override fun onDragEnd(magnetView: FloatingMagnetView) {
-        FloatingViewImpl.get().contentView?.setImageResource(R.drawable.checkbox_unselect)
-    }
+    override fun onDragEnd(magnetView: FloatingMagnetView) {}
 
+    override fun onMoveToEdge(magnetView: FloatingMagnetView) {
+        magnetView.contentView?.setImageResource(R.drawable.checkbox_unselect)
+    }
 }
