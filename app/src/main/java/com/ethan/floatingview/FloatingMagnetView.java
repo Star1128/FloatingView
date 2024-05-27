@@ -7,11 +7,11 @@ import android.graphics.Color;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
+import android.widget.ImageView;
 
 public class FloatingMagnetView extends FrameLayout {
 
@@ -28,6 +28,8 @@ public class FloatingMagnetView extends FrameLayout {
     private int mStatusBarHeight;
     private boolean isNearestLeft = true;
     private float mPortraitY;
+    boolean alreadyReportDragStart = false;
+    ImageView contentView;
 
     public FloatingMagnetView(Context context) {
         this(context, null);
@@ -40,6 +42,16 @@ public class FloatingMagnetView extends FrameLayout {
     public FloatingMagnetView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         init();
+    }
+
+    @Override
+    public void addView(View child, int width, int height) {
+        super.addView(child, width, height);
+        contentView = (ImageView) child;
+    }
+
+    public ImageView getContentView() {
+        return contentView;
     }
 
     public void setMagnetViewListener(MagnetViewListener magnetViewListener) {
@@ -62,15 +74,23 @@ public class FloatingMagnetView extends FrameLayout {
                 changeOriginalTouchParams(event);
                 updateSize();
                 mMoveAnimator.stop();
+                alreadyReportDragStart = false;
                 break;
             case MotionEvent.ACTION_MOVE:
                 updateViewPosition(event);
+                if (!alreadyReportDragStart && !isOnClickEvent()) {
+                    mMagnetViewListener.onDragStart(this);
+                    alreadyReportDragStart = true;
+                }
                 break;
             case MotionEvent.ACTION_UP:
                 clearPortraitY();
                 moveToEdge();
                 if (isOnClickEvent()) {
                     dealClickEvent();
+                }
+                if (alreadyReportDragStart) {
+                    mMagnetViewListener.onDragEnd(this);
                 }
                 break;
         }
@@ -201,7 +221,7 @@ public class FloatingMagnetView extends FrameLayout {
 
     private class MoveAnimator implements Runnable {
 
-        private Handler handler = new Handler(Looper.getMainLooper());
+        private final Handler handler = new Handler(Looper.getMainLooper());
         private float destinationX;
         private float destinationY;
         private long startingTime;

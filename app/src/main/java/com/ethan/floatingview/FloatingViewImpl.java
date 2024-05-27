@@ -6,6 +6,7 @@ import android.os.Looper;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
+import android.widget.ImageView;
 
 import androidx.core.view.ViewCompat;
 
@@ -14,8 +15,8 @@ import java.lang.ref.WeakReference;
 
 public class FloatingViewImpl implements IFloatingView {
 
-    private FloatingMagnetView mFloatingMagnetView;
     private static volatile FloatingViewImpl mInstance;
+    private FloatingMagnetView mFloatingMagnetView;
     private WeakReference<ViewGroup> mContainer;
 
     private FloatingViewImpl() {
@@ -30,6 +31,13 @@ public class FloatingViewImpl implements IFloatingView {
             }
         }
         return mInstance;
+    }
+
+    public ImageView getContentView() {
+        if (mFloatingMagnetView == null) {
+            return null;
+        }
+        return mFloatingMagnetView.getContentView();
     }
 
     @Override

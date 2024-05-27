@@ -6,8 +6,6 @@ public class App extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
-        ImageView view = new ImageView(this);
-        view.setImageResource(R.mipmap.ic_launcher_round);
-        FloatingManager.init(this, view);
+        FloatingManager.init(this);
     }
 }

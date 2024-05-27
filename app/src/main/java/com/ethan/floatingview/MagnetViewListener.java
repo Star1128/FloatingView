@@ -5,4 +5,8 @@ public interface MagnetViewListener {
     void onRemove(FloatingMagnetView magnetView);
 
     void onClick(FloatingMagnetView magnetView);
+
+    void onDragStart(FloatingMagnetView magnetView);
+
+    void onDragEnd(FloatingMagnetView magnetView);
 }
