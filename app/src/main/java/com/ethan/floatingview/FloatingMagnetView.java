@@ -1,15 +1,17 @@
 package com.ethan.floatingview;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
+import android.animation.AnimatorSet;
+import android.animation.ObjectAnimator;
 import android.content.Context;
 import android.content.res.Configuration;
-import android.content.res.Resources;
 import android.graphics.Color;
-import android.os.Handler;
-import android.os.Looper;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.AccelerateDecelerateInterpolator;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 
@@ -170,7 +172,7 @@ public class FloatingMagnetView extends FrameLayout {
             y = mPortraitY;
             clearPortraitY();
         }
-        mMoveAnimator.start(isLeft, moveDestination, Math.min(Math.max(ScreenUtil.INSTANCE.getStatusBarHeight(App.context), y), mScreenHeight - getHeight()));
+        mMoveAnimator.start(isLeft, moveDestination, Math.min(Math.max(ScreenUtil.INSTANCE.getStatusBarHeight(App.context), y), mScreenHeight - getHeight()), Config.ANIMATION_DURATION);
     }
 
     public void clearPortraitY() {
@@ -216,41 +218,29 @@ public class FloatingMagnetView extends FrameLayout {
         }
     }
 
-    private class MoveAnimator implements Runnable {
+    private class MoveAnimator {
+        private void start(boolean isLeft, float destinationX, float destinationY, long duration) {
+            ObjectAnimator animatorX = ObjectAnimator.ofFloat(FloatingMagnetView.this, "x", getX(), destinationX);
+            ObjectAnimator animatorY = ObjectAnimator.ofFloat(FloatingMagnetView.this, "y", getY(), destinationY);
 
-        private final Handler handler = new Handler(Looper.getMainLooper());
-        private boolean isLeft;
-        private float destinationX;
-        private float destinationY;
-        private long startingTime;
-
-        void start(boolean isLeft, float x, float y) {
-            this.isLeft = isLeft;
-            this.destinationX = x;
-            this.destinationY = y;
-            startingTime = System.currentTimeMillis();
-            handler.post(this);
-        }
-
-        @Override
-        public void run() {
-            if (getRootView() == null || getRootView().getParent() == null) {
-                return;
-            }
-            float progress = Math.min(1, (System.currentTimeMillis() - startingTime) / Config.ANIMATION_DURATION);
-            // 计算单次位移量，由于 getX() 和 getY() 每次都在改变，所以并非线性动画
-            float deltaX = (destinationX - getX()) * progress;
-            float deltaY = (destinationY - getY()) * progress;
-            move(deltaX, deltaY);
-            if (progress < 1) {
-                handler.post(this);
-            } else if (mIsDragging) {
-                mMagnetViewListener.onMoveToEdge(FloatingMagnetView.this, isLeft);
-            }
+            AnimatorSet animatorSet = new AnimatorSet();
+            animatorSet.playTogether(animatorX, animatorY); // 同时播放 X 和 Y 动画
+            animatorSet.setDuration(duration);
+            animatorSet.setInterpolator(new AccelerateDecelerateInterpolator());
+            animatorSet.addListener(new AnimatorListenerAdapter() {
+                @Override
+                public void onAnimationEnd(Animator animation) {
+                    if (mMagnetViewListener != null) {
+                        mMagnetViewListener.onMoveToEdge(FloatingMagnetView.this, isLeft);
+                    }
+                }
+            });
+            animatorSet.start();
         }
 
         private void stop() {
-            handler.removeCallbacks(this);
+            // 停止动画
+            animate().cancel();
         }
     }
 
