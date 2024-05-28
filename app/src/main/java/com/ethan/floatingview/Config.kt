@@ -7,7 +7,7 @@ object Config {
     // 贴边动画持续时长 毫秒
     const val ANIMATION_DURATION = 400f
     // 贴边边距 PX
-    const val MARGIN_EDGE = 13
+    const val MARGIN_EDGE = 1
     // 点击/移动事件判定时间阈值 毫秒
     const val TOUCH_TIME_THRESHOLD = 150
 }

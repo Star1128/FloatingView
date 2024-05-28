@@ -13,6 +13,8 @@ import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 
+import com.ethan.floatingview.utils.ScreenUtil;
+
 /**
  * 悬浮窗视图包装类，充当自定义内容的外壳，包含具体的滑动&吸附逻辑
  */
@@ -63,7 +65,7 @@ public class FloatingMagnetView extends FrameLayout {
 
     private void init() {
         mMoveAnimator = new MoveAnimator();
-        mStatusBarHeight = getStatusBarHeight();
+        mStatusBarHeight = ScreenUtil.INSTANCE.getStatusBarHeight(App.context);
         setClickable(true);
     }
 
@@ -168,7 +170,7 @@ public class FloatingMagnetView extends FrameLayout {
             y = mPortraitY;
             clearPortraitY();
         }
-        mMoveAnimator.start(moveDestination, Math.min(Math.max(getStatusBarHeight(), y), mScreenHeight - getHeight()));
+        mMoveAnimator.start(isLeft, moveDestination, Math.min(Math.max(ScreenUtil.INSTANCE.getStatusBarHeight(App.context), y), mScreenHeight - getHeight()));
     }
 
     public void clearPortraitY() {
@@ -214,23 +216,16 @@ public class FloatingMagnetView extends FrameLayout {
         }
     }
 
-    private int getStatusBarHeight() {
-        int result = 0;
-        int resourceId = getResources().getIdentifier("status_bar_height", "dimen", "android");
-        if (resourceId > 0) {
-            result = Resources.getSystem().getDimensionPixelSize(resourceId);
-        }
-        return result;
-    }
-
     private class MoveAnimator implements Runnable {
 
         private final Handler handler = new Handler(Looper.getMainLooper());
+        private boolean isLeft;
         private float destinationX;
         private float destinationY;
         private long startingTime;
 
-        void start(float x, float y) {
+        void start(boolean isLeft, float x, float y) {
+            this.isLeft = isLeft;
             this.destinationX = x;
             this.destinationY = y;
             startingTime = System.currentTimeMillis();
@@ -250,7 +245,7 @@ public class FloatingMagnetView extends FrameLayout {
             if (progress < 1) {
                 handler.post(this);
             } else if (mIsDragging) {
-                mMagnetViewListener.onMoveToEdge(FloatingMagnetView.this);
+                mMagnetViewListener.onMoveToEdge(FloatingMagnetView.this, isLeft);
             }
         }
 

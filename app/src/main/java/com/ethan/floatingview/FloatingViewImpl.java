@@ -10,6 +10,8 @@ import android.widget.ImageView;
 
 import androidx.core.view.ViewCompat;
 
+import com.ethan.floatingview.utils.ScreenUtil;
+
 import java.lang.ref.WeakReference;
 
 /**
@@ -60,7 +62,7 @@ public class FloatingViewImpl implements IFloatingView {
     }
 
     @Override
-    public FloatingViewImpl add(View view) {
+    public FloatingViewImpl add(View view, boolean isLeft) {
         synchronized (this) {
             if (mFloatingMagnetView != null) {
                 return this;
@@ -70,6 +72,17 @@ public class FloatingViewImpl implements IFloatingView {
             params.topMargin = view.getResources().getDisplayMetrics().heightPixels >> 1;
             mFloatingMagnetView.setLayoutParams(params);
             mFloatingMagnetView.addView(view, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
+            // 初始化贴右边，需要额外计算 leftMargin
+            if (!isLeft) {
+                // 测量 view 的宽度
+                view.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED);
+                int viewWidth = view.getMeasuredWidth();
+                // 获取屏幕宽度，并计算 leftMargin
+                int screenWidth = ScreenUtil.INSTANCE.getScreenWidth(App.context);
+                params.leftMargin = screenWidth - viewWidth;
+                // 更新布局参数
+                mFloatingMagnetView.setLayoutParams(params);
+            }
             addViewToWindow(mFloatingMagnetView);
         }
         return this;

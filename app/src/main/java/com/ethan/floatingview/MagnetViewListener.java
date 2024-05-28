@@ -10,5 +10,5 @@ public interface MagnetViewListener {
 
     void onDragEnd(FloatingMagnetView magnetView);
 
-    void onMoveToEdge(FloatingMagnetView magnetView);
+    void onMoveToEdge(FloatingMagnetView magnetView, boolean isLeft);
 }

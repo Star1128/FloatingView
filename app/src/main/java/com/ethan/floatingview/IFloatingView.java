@@ -8,7 +8,13 @@ public interface IFloatingView {
 
     FloatingViewImpl remove();
 
-    FloatingViewImpl add(View view);
+    /**
+     * 初始化视图
+     *
+     * @param view   内容
+     * @param isLeft 是否初始贴左边
+     */
+    FloatingViewImpl add(View view, boolean isLeft);
 
     FloatingViewImpl attach(Activity activity);
 
