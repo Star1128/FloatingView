@@ -225,7 +225,7 @@ public class FloatingMagnetView extends FrameLayout {
                 @Override
                 public void run() {
                     updateSize();
-                    moveToEdge(isNearestLeft, isLandscape);
+                    moveToEdge(isNearestLeft(), isLandscape);
                 }
             });
         }
