@@ -34,7 +34,7 @@ public class FloatingMagnetView extends FrameLayout {
     private int mScreenHeight; // 整个屏幕高度，包含状态栏
     private int mStatusBarHeight;
     private boolean isNearestLeft = true;
-    private float mPortraitY;
+    private float mPortraitY; // 竖屏切换到横屏之前，先保存下竖屏时的 Y 坐标，用于恢复
     private boolean mIsDragging = false;
     private ImageView mContentView;
 
@@ -179,13 +179,19 @@ public class FloatingMagnetView extends FrameLayout {
 
     protected void moveToEdge(boolean isLeft, boolean isLandscape) {
         // 距离边缘还有一点空隙
-        float moveDestination = isLeft ? Config.MARGIN_EDGE : mScreenWidth - Config.MARGIN_EDGE;
-        float y = getY();
+        float destinationX = isLeft ? Config.MARGIN_EDGE : mScreenWidth - Config.MARGIN_EDGE;
+        float y;
+        if (isLandscape) {
+            // 按比例计算横屏后的 Y 坐标
+            y = mPortraitY / mScreenWidth * mScreenHeight;
+        } else {
+            y = getY();
+        }
         if (!isLandscape && mPortraitY != 0) {
             y = mPortraitY;
             clearPortraitY();
         }
-        mMoveAnimator.start(isLeft, moveDestination, Math.min(Math.max(ScreenUtil.INSTANCE.getStatusBarHeight(App.context), y), mScreenHeight - getHeight()), Config.ANIMATION_DURATION);
+        mMoveAnimator.start(isLeft, destinationX, Math.min(Math.max(ScreenUtil.INSTANCE.getStatusBarHeight(App.context), y), mScreenHeight - getHeight()), Config.ANIMATION_DURATION);
     }
 
     public void clearPortraitY() {
@@ -233,8 +239,8 @@ public class FloatingMagnetView extends FrameLayout {
 
     private class MoveAnimator {
         private void start(boolean isLeft, float destinationX, float destinationY, long duration) {
-            ObjectAnimator animatorX = ObjectAnimator.ofFloat(FloatingMagnetView.this, "x", getX(), destinationX);
-            ObjectAnimator animatorY = ObjectAnimator.ofFloat(FloatingMagnetView.this, "y", getY(), destinationY);
+            ObjectAnimator animatorX = ObjectAnimator.ofFloat(FloatingMagnetView.this, "translationX", getX(), destinationX);
+            ObjectAnimator animatorY = ObjectAnimator.ofFloat(FloatingMagnetView.this, "translationY", getY(), destinationY);
 
             AnimatorSet animatorSet = new AnimatorSet();
             animatorSet.playTogether(animatorX, animatorY); // 同时播放 X 和 Y 动画

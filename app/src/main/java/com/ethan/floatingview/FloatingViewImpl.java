@@ -69,19 +69,17 @@ public class FloatingViewImpl implements IFloatingView {
             }
             mFloatingMagnetView = new FloatingMagnetView(view.getContext());
             ViewGroup.MarginLayoutParams params = new ViewGroup.MarginLayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-            params.topMargin = view.getResources().getDisplayMetrics().heightPixels >> 1;
+            mFloatingMagnetView.setTranslationY(view.getResources().getDisplayMetrics().heightPixels >> 1);
             mFloatingMagnetView.setLayoutParams(params);
             mFloatingMagnetView.addView(view, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
-            // 初始化贴右边，需要额外计算 leftMargin
+            // 初始化贴右边，需要额外计算 X 轴偏移量
             if (!isLeft) {
                 // 测量 view 的宽度
                 view.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED);
                 int viewWidth = view.getMeasuredWidth();
-                // 获取屏幕宽度，并计算 leftMargin
+                // 获取屏幕宽度，并计算 X 轴偏移量
                 int screenWidth = ScreenUtil.INSTANCE.getScreenWidth(App.context);
-                params.leftMargin = screenWidth - viewWidth;
-                // 更新布局参数
-                mFloatingMagnetView.setLayoutParams(params);
+                mFloatingMagnetView.setTranslationX(screenWidth - viewWidth);
             }
             addViewToWindow(mFloatingMagnetView);
         }
