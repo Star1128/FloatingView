@@ -85,6 +85,7 @@ public class FloatingMagnetView extends FrameLayout {
                 break;
             case MotionEvent.ACTION_MOVE:
                 updateViewPosition(event);
+                addCenterLine();
                 if (!mIsDragging && !isOnClickEvent()) {
                     mMagnetViewListener.onDragStart(this);
                     mIsDragging = true;
@@ -92,6 +93,7 @@ public class FloatingMagnetView extends FrameLayout {
                 break;
             case MotionEvent.ACTION_UP:
                 clearPortraitY();
+                clearCenterLine();
                 moveToEdge();
                 if (isOnClickEvent()) {
                     performClick();
@@ -99,6 +101,7 @@ public class FloatingMagnetView extends FrameLayout {
                 }
                 if (mIsDragging) {
                     // 暂时先不认为拖动状态结束，因为后续还有贴边动画
+                    mIsDragging = false;
                     mMagnetViewListener.onDragEnd(this);
                 }
                 break;
@@ -132,22 +135,26 @@ public class FloatingMagnetView extends FrameLayout {
             desY = mScreenHeight - getHeight();
         }
         setY(desY);
+    }
 
+    private void addCenterLine() {
         if (Config.SHOW_CENTER_LINE) {
-            updateCenterLine();
+            if (centerLine.getParent() != null) {
+                ((ViewGroup) centerLine.getParent()).removeView(centerLine);
+            }
+
+            ViewGroup.LayoutParams params = new ViewGroup.LayoutParams(1, ViewGroup.LayoutParams.MATCH_PARENT);
+            centerLine.setX(mScreenWidth / 2.0f);
+            centerLine.setLayoutParams(params);
+            centerLine.setBackgroundColor(Color.BLUE);
+            ((ViewGroup) getParent()).addView(centerLine);
         }
     }
 
-    private void updateCenterLine() {
-        if (centerLine.getParent() != null) {
+    private void clearCenterLine() {
+        if (Config.SHOW_CENTER_LINE && centerLine.getParent() != null) {
             ((ViewGroup) centerLine.getParent()).removeView(centerLine);
         }
-
-        ViewGroup.LayoutParams params = new ViewGroup.LayoutParams(1, ViewGroup.LayoutParams.MATCH_PARENT);
-        centerLine.setX(mScreenWidth / 2.0f);
-        centerLine.setLayoutParams(params);
-        centerLine.setBackgroundColor(Color.BLUE);
-        ((ViewGroup) getParent()).addView(centerLine);
     }
 
     private void changeOriginalTouchParams(MotionEvent event) {
