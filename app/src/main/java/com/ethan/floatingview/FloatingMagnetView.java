@@ -94,6 +94,7 @@ public class FloatingMagnetView extends FrameLayout {
                 clearPortraitY();
                 moveToEdge();
                 if (isOnClickEvent()) {
+                    performClick();
                     dealClickEvent();
                 }
                 if (mIsDragging) {
@@ -113,6 +114,11 @@ public class FloatingMagnetView extends FrameLayout {
 
     protected boolean isOnClickEvent() {
         return System.currentTimeMillis() - mLastTouchDownTime < Config.TOUCH_TIME_THRESHOLD;
+    }
+
+    @Override
+    public boolean performClick() {
+        return super.performClick();
     }
 
     private void updateViewPosition(MotionEvent event) {
